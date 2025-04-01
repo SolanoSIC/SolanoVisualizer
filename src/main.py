@@ -1,12 +1,18 @@
 import serial
+import serial.tools.list_ports
 import pandas as pd
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtWidgets  
 
-# Initialize USB connection
-usb_port = 'COM4'  # Change this to your USB port
+# Function to list available USB ports
+def get_available_ports():
+    ports = serial.tools.list_ports.comports()
+    return [(port.device, port.description) for port in ports]
+
+# Initialize USB connection (default values)
+usb_port = None
 baud_rate = 230400
-ser = serial.Serial(usb_port, baud_rate)
+ser = None
 
 # Prepare data storage
 data_fields = [
@@ -20,17 +26,16 @@ df = pd.DataFrame(columns=data_fields)
 
 # Read data from USB port and concat to DataFrame
 def update_data():
-    global df
-    while ser.in_waiting > 0:  # Read all available data
+    global df, ser
+    if ser and ser.in_waiting > 0:  # Read all available data
         line_data = ser.readline().decode('utf-8').strip()
         try:
             values = list(map(float, line_data.split(';')))
             if len(values) == len(data_fields):
                 new_row = pd.DataFrame([values], columns=data_fields)
                 df = pd.concat([df, new_row], ignore_index=True)
-                # print(f"DataFrame updated:\n{df.tail()}")  # Debugging print statement
         except ValueError:
-            print("Error parsing data")  # Debugging print statement
+            print("Error parsing data")
     return df
 
 def update_plot():
@@ -59,11 +64,33 @@ def start_animation():
 def stop_animation():
     timer.stop()
 
+# Function to update the selected USB port
+def update_usb_port(index):
+    global ser, usb_port
+    selected_port = port_dropdown.itemData(index)
+    if selected_port:
+        usb_port = selected_port
+        if ser:
+            ser.close()
+        try:
+            ser = serial.Serial(usb_port, baud_rate)
+            print(f"Connected to: {usb_port}")
+        except serial.SerialException as e:
+            print(f"Failed to connect to {usb_port}: {e}")
+
 # Initialize PyQtGraph
 app = QtWidgets.QApplication([])  
 win = QtWidgets.QWidget()
 layout = QtWidgets.QVBoxLayout()
 win.setLayout(layout)
+
+# Dropdown menu for USB ports
+port_dropdown = QtWidgets.QComboBox()
+available_ports = get_available_ports()
+for port, description in available_ports:
+    port_dropdown.addItem(f"{port} - {description}", port)
+port_dropdown.currentIndexChanged.connect(update_usb_port)
+layout.addWidget(port_dropdown)
 
 # Buttons settings and layout
 button_layout = QtWidgets.QHBoxLayout()
