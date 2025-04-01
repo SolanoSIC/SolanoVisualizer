@@ -5,7 +5,7 @@ This project is a Python application that reads data from a USB port and display
 ## Project Structure
 
 ```
-usb-data-visualizer
+SolanoVisualizer
 ├── src
 │   ├── main.py          # Entry point of the application
 │   └── utils
@@ -19,7 +19,7 @@ usb-data-visualizer
 1. Clone the repository:
    ```
    git clone <repository-url>
-   cd usb-data-visualizer
+   cd SolanoVisualizer
    ```
 
 2. Install the required dependencies:
