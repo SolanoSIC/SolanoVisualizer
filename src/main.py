@@ -73,6 +73,20 @@ def reset_data():
     else:
         print("Cannot reset while the program is running.")
 
+# Add a save function
+def save_data():
+    global df
+    if not timer.isActive():  # Check if the program is not running
+        options = QtWidgets.QFileDialog.Options()
+        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            None, "Save DataFrame as CSV", "", "CSV Files (*.csv);;All Files (*)", options=options
+        )
+        if file_path:  # If the user selected a file
+            df.to_csv(file_path, index=False)
+            print(f"DataFrame saved to {file_path}")
+    else:
+        print("Cannot save while the program is running.")
+
 # Function to update the selected USB port
 def update_usb_port(index):
     global ser, usb_port
@@ -106,11 +120,14 @@ button_layout = QtWidgets.QHBoxLayout()
 start_button = QtWidgets.QPushButton("Start")
 stop_button = QtWidgets.QPushButton("Stop")
 reset_button = QtWidgets.QPushButton("Reset")  
+save_button = QtWidgets.QPushButton("Save")
 
 button_layout.addWidget(start_button)
 button_layout.addWidget(stop_button)
 button_layout.addWidget(reset_button)  
+button_layout.addWidget(save_button)  # Add the Save button to the same layout as the others
 layout.addLayout(button_layout)
+
 
 
 plot_widget = pg.GraphicsLayoutWidget(show=True, title="USB Data Visualizer")
@@ -131,10 +148,12 @@ curve_speed = plot2.plot(pen='g', name="Speed")
 
 layout.addWidget(plot_widget)
 
+
+# Connect buttons to functions 
 start_button.clicked.connect(start_animation)
 stop_button.clicked.connect(stop_animation)
 reset_button.clicked.connect(reset_data)
-
+save_button.clicked.connect(save_data)
 win.show()
 
 # Start Qt event loop
