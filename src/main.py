@@ -9,6 +9,22 @@ def get_available_ports():
     ports = serial.tools.list_ports.comports()
     return [(port.device, port.description) for port in ports]
 
+# Function to refresh the list of available USB ports
+def refresh_usb_ports():
+    global port_dropdown
+    current_ports = set(port_dropdown.itemData(i) for i in range(port_dropdown.count()))
+    available_ports = get_available_ports()
+
+    # Add new ports to the top of the dropdown
+    for port, description in available_ports:
+        if port not in current_ports:
+            port_dropdown.insertItem(0, f"{port} - {description}", port)  # Insert at the top
+
+    # Remove ports that are no longer available
+    for i in range(port_dropdown.count() - 1, -1, -1):
+        if port_dropdown.itemData(i) not in [port for port, _ in available_ports]:
+            port_dropdown.removeItem(i)
+
 # Initialize USB connection (default values)
 usb_port = None
 baud_rate = 230400
@@ -38,11 +54,20 @@ def update_data():
             print("Error parsing data")
     return df
 
+# Update the plot function to plot all data
 def update_plot():
     global curve_pdiff_mid, curve_pdiff_NS, curve_pdiff_EW, curve_speed
     df = update_data()
-    x = range(len(df))
-    
+
+    # Check if the DataFrame is empty
+    if df.empty:
+        print("No data available to plot.")
+        return
+
+    # Use the entire DataFrame for plotting
+    x = range(len(df))  # Generate x-axis values for all rows
+
+    # Update the plots with all data
     y1 = df['pdiff_mid']
     curve_pdiff_mid.setData(x, y1)
     
@@ -60,32 +85,40 @@ timer.timeout.connect(update_plot)
 
 def start_animation():
     timer.start(5)
+    # Disable Reset and Save buttons while the timer is running
+    reset_button.setEnabled(False)
+    save_button.setEnabled(False)
 
 def stop_animation():
     timer.stop()
+    # Enable Reset and Save buttons when the timer is stopped
+    reset_button.setEnabled(True)
+    save_button.setEnabled(True)
 
 # Add a reset function
 def reset_data():
-    global df
-    if not timer.isActive():  # Check if the program is not running
-        df = pd.DataFrame(columns=data_fields)  # Clear the DataFrame
-        print("DataFrame has been reset.")
-    else:
-        print("Cannot reset while the program is running.")
+    global df    
+    # Clear the DataFrame
+    df = pd.DataFrame(columns=data_fields)
+    print("DataFrame has been reset.")
+    
+    # Clear the graph by resetting the data for all curves
+    curve_pdiff_mid.setData([], [])
+    curve_pdiff_NS.setData([], [])
+    curve_pdiff_EW.setData([], [])
+    curve_speed.setData([], [])
+    print("Graph has been reset.")
 
 # Add a save function
 def save_data():
     global df
-    if not timer.isActive():  # Check if the program is not running
-        options = QtWidgets.QFileDialog.Options()
-        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            None, "Save DataFrame as CSV", "", "CSV Files (*.csv);;All Files (*)", options=options
-        )
-        if file_path:  # If the user selected a file
-            df.to_csv(file_path, index=False)
-            print(f"DataFrame saved to {file_path}")
-    else:
-        print("Cannot save while the program is running.")
+    options = QtWidgets.QFileDialog.Options()
+    file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+        None, "Save DataFrame as CSV", "", "CSV Files (*.csv);;All Files (*)", options=options
+    )
+    if file_path:  # If the user selected a file
+        df.to_csv(file_path, index=False)
+        print(f"DataFrame saved to {file_path}")
 
 # Function to update the selected USB port
 def update_usb_port(index):
@@ -125,12 +158,10 @@ save_button = QtWidgets.QPushButton("Save")
 button_layout.addWidget(start_button)
 button_layout.addWidget(stop_button)
 button_layout.addWidget(reset_button)  
-button_layout.addWidget(save_button)  # Add the Save button to the same layout as the others
+button_layout.addWidget(save_button) 
 layout.addLayout(button_layout)
 
-
-
-plot_widget = pg.GraphicsLayoutWidget(show=True, title="USB Data Visualizer")
+plot_widget = pg.GraphicsLayoutWidget(show=True, title="Solano Visualizer")
 plot_widget.resize(1000, 600)
 
 # First plot for pdiff values
@@ -148,6 +179,10 @@ curve_speed = plot2.plot(pen='g', name="Speed")
 
 layout.addWidget(plot_widget)
 
+# Initialize a QTimer to refresh USB ports periodically
+usb_refresh_timer = QtCore.QTimer()
+usb_refresh_timer.timeout.connect(refresh_usb_ports)
+usb_refresh_timer.start(1000)  # Refresh every 1 second
 
 # Connect buttons to functions 
 start_button.clicked.connect(start_animation)
