@@ -64,6 +64,15 @@ def start_animation():
 def stop_animation():
     timer.stop()
 
+# Add a reset function
+def reset_data():
+    global df
+    if not timer.isActive():  # Check if the program is not running
+        df = pd.DataFrame(columns=data_fields)  # Clear the DataFrame
+        print("DataFrame has been reset.")
+    else:
+        print("Cannot reset while the program is running.")
+
 # Function to update the selected USB port
 def update_usb_port(index):
     global ser, usb_port
@@ -96,9 +105,13 @@ layout.addWidget(port_dropdown)
 button_layout = QtWidgets.QHBoxLayout()
 start_button = QtWidgets.QPushButton("Start")
 stop_button = QtWidgets.QPushButton("Stop")
+reset_button = QtWidgets.QPushButton("Reset")  
+
 button_layout.addWidget(start_button)
 button_layout.addWidget(stop_button)
+button_layout.addWidget(reset_button)  
 layout.addLayout(button_layout)
+
 
 plot_widget = pg.GraphicsLayoutWidget(show=True, title="USB Data Visualizer")
 plot_widget.resize(1000, 600)
@@ -120,6 +133,7 @@ layout.addWidget(plot_widget)
 
 start_button.clicked.connect(start_animation)
 stop_button.clicked.connect(stop_animation)
+reset_button.clicked.connect(reset_data)
 
 win.show()
 
