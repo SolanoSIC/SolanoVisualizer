@@ -3,6 +3,7 @@ import serial.tools.list_ports
 import pandas as pd
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtWidgets  
+import signal
 
 # Function to list available USB ports
 def get_available_ports():
@@ -189,6 +190,15 @@ start_button.clicked.connect(start_animation)
 stop_button.clicked.connect(stop_animation)
 reset_button.clicked.connect(reset_data)
 save_button.clicked.connect(save_data)
+
+# Gracefully close the application on Ctrl+C
+def handle_sigint(signal, frame):
+    print("Exiting application...")
+    QtWidgets.QApplication.quit()
+
+# Connect the SIGINT signal to the handler
+signal.signal(signal.SIGINT, handle_sigint)
+
 win.show()
 
 # Start Qt event loop
