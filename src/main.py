@@ -55,30 +55,38 @@ def update_data():
             print("Error parsing data")
     return df
 
-# Update the plot function to plot all data
+# Update the plot function to respect the time window
 def update_plot():
-    global curve_pdiff_mid, curve_pdiff_NS, curve_pdiff_EW, curve_speed
+    global curve_pdiff_mid, curve_pdiff_NS, curve_pdiff_EW, curve_speed 
     df = update_data()
 
-    # Check if the DataFrame is empty
-    if df.empty:
+    # Get the selected time window in seconds
+    time_window_seconds = time_window_spinbox.value()
+    points_to_display = time_window_seconds * 220  # Calculate the number of points to display
+
+    # Use the tail function to get the last `points_to_display` rows
+    filtered_df = df.tail(points_to_display)
+    filtered_df = filtered_df.reset_index(drop=True)
+
+    # Check if the filtered DataFrame is empty
+    if filtered_df.empty:
         print("No data available to plot.")
         return
 
-    # Use the entire DataFrame for plotting
-    x = range(len(df))  # Generate x-axis values for all rows
+    # Use the index of the filtered DataFrame for the x-axis
+    x = range(len(filtered_df))
 
-    # Update the plots with all data
-    y1 = df['pdiff_mid']
+    # Update the plots with the filtered data
+    y1 = filtered_df['pdiff_mid']
     curve_pdiff_mid.setData(x, y1)
     
-    y2 = df['pdiff_NS']
+    y2 = filtered_df['pdiff_NS']
     curve_pdiff_NS.setData(x, y2)
     
-    y3 = df['pdiff_EW']
+    y3 = filtered_df['pdiff_EW']
     curve_pdiff_EW.setData(x, y3)
     
-    y4 = df['Speed']
+    y4 = filtered_df['Speed']
     curve_speed.setData(x, y4)
 
 timer = QtCore.QTimer()
@@ -161,6 +169,18 @@ button_layout.addWidget(stop_button)
 button_layout.addWidget(reset_button)  
 button_layout.addWidget(save_button) 
 layout.addLayout(button_layout)
+
+# Add a spinbox for selecting the time window
+time_window_label = QtWidgets.QLabel("Time Window (seconds):")
+time_window_spinbox = QtWidgets.QSpinBox()
+time_window_spinbox.setRange(1, 60)  # Allow the user to select between 1 and 60 seconds
+time_window_spinbox.setValue(1)  # Default to 10 seconds
+
+# Add the spinbox to the layout
+time_window_layout = QtWidgets.QHBoxLayout()
+time_window_layout.addWidget(time_window_label)
+time_window_layout.addWidget(time_window_spinbox)
+layout.addLayout(time_window_layout)
 
 plot_widget = pg.GraphicsLayoutWidget(show=True, title="Solano Visualizer")
 plot_widget.resize(1000, 600)
