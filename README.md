@@ -1,6 +1,32 @@
-# USB Data Visualizer
+# SolanoVisualizer
 
-This project is a Python application that reads data from a USB port and displays it on a real-time updating graph. It utilizes the `pyserial` library for serial communication and `pyqtgraph` for data visualization.
+SolanoVisualizer is a Python-based application that visualizes data from a USB device in real-time using PyQtGraph. It allows users to connect to a USB port, visualize data, and saving them as a CSV file.
+
+## Features
+
+### 1. **USB Port Selection**
+- The application automatically detects available USB ports on your computer.
+- A dropdown menu allows you to select the desired USB port to connect to.
+- The selected port is used to establish a connection with the USB device.
+
+### 2. **Real-Time Data Visualization**
+- Data from the USB device is read and visualized in real-time.
+- Two plots are displayed:
+  - **pdiff values**: Displays `pdiff_mid`, `pdiff_NS`, and `pdiff_EW`.
+  - **Speed**: Displays the `Speed` data.
+
+### 3. **Start and Stop Buttons**
+- **Start**: Begins the real-time data visualization.
+- **Stop**: Pauses the data visualization.
+
+### 4. **Reset Button**
+- Clears the DataFrame containing the collected data.
+- **Note**: The reset operation is only allowed when the program is not running (i.e., when the visualization is stopped).
+
+### 5. **Save Button**
+- Allows you to save the collected data to a CSV file.
+- Opens a file dialog to let you choose the file name and location.
+- **Note**: Saving is only allowed when the program is not running.
 
 ## Project Structure
 
@@ -14,49 +40,46 @@ SolanoVisualizer
 └── README.md            # Project documentation
 ```
 
+## Requirements
+
+- Python 3.x
+- Required libraries:
+  - `pyqtgraph`
+  - `pandas`
+  - `pyserial`
+
 ## Installation
 
 1. Clone the repository:
-   ```
-   git clone <repository-url>
+   ```bash
+   git clone https://github.com/your-repo/SolanoVisualizer.git
    cd SolanoVisualizer
    ```
 
 2. Install the required dependencies:
-   ```
+   ```bash
    pip install -r requirements.txt
    ```
 
-## Usage
+## How to Use
 
-1. Connect your USB device to the computer.
-2. Edit the `usb_port` variable in `src/main.py` to match your system's USB port:
-   - **Windows**: Typically `COMx` where `x` is the port number (e.g., `COM4`).
-   - **Linux**: Typically `/dev/ttyUSBx` or `/dev/ttyACMx` where `x` is the port number (e.g., `/dev/ttyUSB0`).
+1. **Select a USB Port**:
+   - Use the dropdown menu to select the USB port connected to your device.
 
-   Example for Windows:
-   ```python
-   usb_port = 'COM4'
-   ```
+2. **Start Visualization**:
+   - Click the "Start" button to begin visualizing data in real-time.
 
-   Example for Linux:
-   ```python
-   usb_port = '/dev/ttyUSB0'
-   ```
+3. **Stop Visualization**:
+   - Click the "Stop" button to pause the visualization.
 
-3. Run the application:
-   ```
-   python src/main.py
-   ```
+4. **Reset Data**:
+   - Click the "Reset" button to clear the collected data.
+   - Ensure the program is stopped before resetting.
 
-4. The application will read data from the USB port and display it in real-time on a graph.
-
-## Dependencies
-
-- `pyserial`: For serial communication with the USB device.
-- `pandas`: For data manipulation and analysis.
-- `pyqtgraph`: For plotting the data in real-time.
-- `pyqt5`: For the graphical user interface.
+5. **Save Data**:
+   - Click the "Save" button to save the collected data to a CSV file.
+   - Choose the file name and location in the dialog that appears.
+   - Ensure the program is stopped before saving.
 
 ## Contributing
 
