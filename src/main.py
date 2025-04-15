@@ -77,16 +77,13 @@ def update_plot():
     x = range(len(filtered_df))
 
     # Update the plots with the filtered data
-    y1 = filtered_df['pdiff_mid']
+    y1 = filtered_df['angle_NS_filtered']
     curve_pdiff_mid.setData(x, y1)
     
-    y2 = filtered_df['pdiff_NS']
+    y2 = filtered_df['angle_EW_filtered']
     curve_pdiff_NS.setData(x, y2)
     
-    y3 = filtered_df['pdiff_EW']
-    curve_pdiff_EW.setData(x, y3)
-    
-    y4 = filtered_df['Speed']
+    y4 = filtered_df['Speed_filtered']
     curve_speed.setData(x, y4)
 
 timer = QtCore.QTimer()
