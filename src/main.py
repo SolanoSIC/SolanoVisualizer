@@ -31,18 +31,6 @@ usb_port = None
 baud_rate = 230400
 ser = None
 
-# Initialize PyQtGraph
-app = QtWidgets.QApplication([])  # Create the QApplication instance first
-
-# Initialize the main window and layout
-win = QtWidgets.QWidget()
-layout = QtWidgets.QVBoxLayout()
-# Create a widget for the checkboxes
-checkbox_widget = QtWidgets.QWidget()
-checkbox_layout = QtWidgets.QVBoxLayout()
-checkbox_widget.setLayout(checkbox_layout)
-
-
 # Prepare data storage
 data_fields = [
     "Speed", "Speed_filtered", "Speed_corrected", "pdiff_mid", "pdiff_NS", "pdiff_EW",
@@ -67,14 +55,14 @@ def update_data():
             print("Error parsing data")
     return df
 
-# Function to update plots dynamically based on selected categories
+# Update the plot function to respect the time window
 def update_plot():
-    global df, dynamic_plots
+    global curve_pdiff_mid, curve_pdiff_NS, curve_pdiff_EW, curve_speed 
     df = update_data()
 
     # Get the selected time window in seconds
     time_window_seconds = time_window_spinbox.value()
-    points_to_display = time_window_seconds * 100  # Calculate the number of points to display
+    points_to_display = time_window_seconds * 220  # Calculate the number of points to display
 
     # Use the tail function to get the last `points_to_display` rows
     filtered_df = df.tail(points_to_display)
@@ -88,94 +76,15 @@ def update_plot():
     # Use the index of the filtered DataFrame for the x-axis
     x = range(len(filtered_df))
 
-    # Get the selected categories from the checkboxes
-    selected_categories = [category for category, checkbox in category_checkboxes.items() if checkbox.isChecked()]
-
-    # Clear existing plots and recreate them
-    for category in selected_categories:
-        if category not in dynamic_plots:
-            # Create a new plot for this category
-            plot = plot_widget.addPlot(title=category)
-            dynamic_plots[category] = plot
-            plot_widget.nextRow()  # Add the next plot in a new row
-
-        # Update the plot with the filtered data for all fields in the category
-        plot = dynamic_plots[category]
-        plot.clear()  # Clear the plot before re-adding data
-        fields_to_plot = field_mapping.get(category, [])
-        for field in fields_to_plot:
-            if field in filtered_df.columns:
-                color = color_mapping.get(field, (0, 0, 0))  # Default to black if no color is defined
-                plot.plot(x, filtered_df[field], pen=pg.mkPen(color=color, width=2), name=field)
-
-    # Remove plots for categories that are no longer selected
-    for category in list(dynamic_plots.keys()):
-        if category not in selected_categories:
-            plot = dynamic_plots.pop(category)
-            plot_widget.removeItem(plot)
-
-
-# Define the field mapping for categories
-field_mapping = {
-    "Speed": ["Speed"],
-    "Speed filtered": ["Speed_filtered"],
-    "Pdiff": ["pdiff_mid", "pdiff_NS", "pdiff_EW"],
-    "Pdiff filtered": ["pdiff_mid_filtered", "pdiff_NS_filtered", "pdiff_EW_filtered"],
-    "Angle": ["angle_NS", "angle_EW"],
-    "Angle filtered": ["angle_NS_filtered", "angle_EW_filtered"],
-    "Temp": ["temp_mid", "temp_NS", "temp_EW"]
-}
-
-# Define the color mapping for the plots
-color_mapping = {
-    "Speed": (0, 255, 0),  # Green
-    "Speed_filtered": (0, 255, 0),  # Green
-    "pdiff_mid": (255, 0, 0),  # Red
-    "pdiff_NS": (0, 128, 255),  # Blue
-    "pdiff_EW": (255, 255, 0),  # Yellow
-    "pdiff_mid_filtered": (255, 0, 0),  # Red
-    "pdiff_NS_filtered": (0, 128, 255),  # Blue
-    "pdiff_EW_filtered": (255, 255, 0),  # Yellow
-    "angle_NS": (0, 128, 255),  # Blue
-    "angle_EW": (255, 255, 0),  # Yellow
-    "angle_NS_filtered": (0, 128, 255),  # Blue
-    "angle_EW_filtered": (255, 255, 0),  # Yellow
-    "temp_mid": (255, 69, 0),  # Orange-Red
-    "temp_NS": (0, 100, 0),  # Dark Green
-    "temp_EW": (70, 130, 180)  # Steel Blue
-}
-
-
-
-# Dictionary to store checkboxes for each category
-category_checkboxes = {}
-
-# Create a checkbox for each category
-for category in field_mapping.keys():
-    checkbox = QtWidgets.QCheckBox(category)
-    # Tick "Speed filtered" and "Angle filtered" by default
-    if category in ["Speed filtered", "Angle filtered"]:
-        checkbox.setChecked(True)
-    checkbox.stateChanged.connect(update_plot)  # Connect state change to update_plot
-    checkbox_layout.addWidget(checkbox)
-    category_checkboxes[category] = checkbox
-
-# Create the main layout
-main_layout = QtWidgets.QHBoxLayout()
-
-# Add the existing layout (left side) to the main layout
-main_layout.addLayout(layout)
-
-# Add the checkbox widget (right side) to the main layout
-main_layout.addWidget(checkbox_widget)
-
-# Set the main layout as the layout for the main window
-win.setLayout(main_layout)
-
-# Dictionary to store dynamically created plots
-dynamic_plots = {}
-
-
+    # Update the plots with the filtered data
+    y1 = filtered_df['angle_NS_filtered']
+    curve_pdiff_mid.setData(x, y1)
+    
+    y2 = filtered_df['angle_EW_filtered']
+    curve_pdiff_NS.setData(x, y2)
+    
+    y4 = filtered_df['Speed_filtered']
+    curve_speed.setData(x, y4)
 
 timer = QtCore.QTimer()
 timer.timeout.connect(update_plot)
@@ -194,19 +103,17 @@ def stop_animation():
 
 # Add a reset function
 def reset_data():
-    global df, dynamic_plots
-
+    global df    
     # Clear the DataFrame
     df = pd.DataFrame(columns=data_fields)
-
-    # Clear all plots but keep the default graphs
-    for category, plot in dynamic_plots.items():
-        plot.clear()  # Clear the plot data but keep the plot itself
-        fields_to_plot = field_mapping.get(category, [])
-        for field in fields_to_plot:
-            if field in data_fields:  # Ensure the field exists in the data_fields
-                color = color_mapping.get(field, (0, 0, 0))  # Default to black if no color is defined
-                plot.plot([], [], pen=pg.mkPen(color=color, width=2), name=field)
+    print("DataFrame has been reset.")
+    
+    # Clear the graph by resetting the data for all curves
+    curve_pdiff_mid.setData([], [])
+    curve_pdiff_NS.setData([], [])
+    curve_pdiff_EW.setData([], [])
+    curve_speed.setData([], [])
+    print("Graph has been reset.")
 
 # Add a save function
 def save_data():
@@ -233,7 +140,11 @@ def update_usb_port(index):
         except serial.SerialException as e:
             print(f"Failed to connect to {usb_port}: {e}")
 
-
+# Initialize PyQtGraph
+app = QtWidgets.QApplication([])  
+win = QtWidgets.QWidget()
+layout = QtWidgets.QVBoxLayout()
+win.setLayout(layout)
 
 # Dropdown menu for USB ports
 port_dropdown = QtWidgets.QComboBox()
@@ -260,7 +171,7 @@ layout.addLayout(button_layout)
 time_window_label = QtWidgets.QLabel("Time Window (seconds):")
 time_window_spinbox = QtWidgets.QSpinBox()
 time_window_spinbox.setRange(1, 60)  # Allow the user to select between 1 and 60 seconds
-time_window_spinbox.setValue(5)  # Default to 10 seconds
+time_window_spinbox.setValue(1)  # Default to 10 seconds
 
 # Add the spinbox to the layout
 time_window_layout = QtWidgets.QHBoxLayout()
@@ -271,20 +182,18 @@ layout.addLayout(time_window_layout)
 plot_widget = pg.GraphicsLayoutWidget(show=True, title="Solano Visualizer")
 plot_widget.resize(1000, 600)
 
-# Add default plots for "Speed filtered" and "Angle filtered"
-for category in ["Speed filtered", "Angle filtered"]:
-    if category in field_mapping:
-        # Create a new plot for this category
-        plot = plot_widget.addPlot(title=category)
-        dynamic_plots[category] = plot
-        plot_widget.nextRow()  # Add the next plot in a new row
+# First plot for pdiff values
+plot1 = plot_widget.addPlot(title="pdiff values")
+curve_pdiff_mid = plot1.plot(pen='y', name="pdiff_mid")
+curve_pdiff_NS = plot1.plot(pen='r', name="pdiff_NS")
+curve_pdiff_EW = plot1.plot(pen='b', name="pdiff_EW")
 
-        # Populate the plot with empty data initially
-        fields_to_plot = field_mapping.get(category, [])
-        for field in fields_to_plot:
-            if field in data_fields:  # Ensure the field exists in the data_fields
-                color = color_mapping.get(field, (0, 0, 0))  # Default to black if no color is defined
-                plot.plot([], [], pen=pg.mkPen(color=color, width=2), name=field)
+# Add a new row for the second plot
+plot_widget.nextRow()
+
+# Second plot for speed
+plot2 = plot_widget.addPlot(title="Speed")
+curve_speed = plot2.plot(pen='g', name="Speed")
 
 layout.addWidget(plot_widget)
 
